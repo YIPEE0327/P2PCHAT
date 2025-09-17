@@ -1,14 +1,9 @@
-# server.py
-from fastapi import FastAPI, WebSocket
-import uvicorn
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 app = FastAPI()
 
+# 연결된 클라이언트 저장
 clients = []
-
-@app.get("/")
-async def root():
-    return {"message": "Server is running!"}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -17,11 +12,9 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
+            # 받은 메시지를 모든 클라이언트에게 전송
             for client in clients:
                 if client != websocket:
                     await client.send_text(data)
-    except:
+    except WebSocketDisconnect:
         clients.remove(websocket)
-
-if __name__ == "__main__":
-    uvicorn.run("server:app", host="0.0.0.0", port=10000)
